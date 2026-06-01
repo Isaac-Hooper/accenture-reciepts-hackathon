@@ -7,6 +7,8 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
+from backend.dbconfig import init_db
+
 load_dotenv()
 
 app = FastAPI(title="Receipts to Riches API")
@@ -23,6 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+init_db()
 
 # ---------------------------------------------------------------------------
 # POST /receipts
@@ -72,7 +75,7 @@ async def upload_receipt(receipt: UploadFile = File(...)):
             ],
         }],
     )
-    #
+
     # Step 3 — Parse the extracted JSON from the model response
     receipt_data = json.loads(response.choices[0].message.content)
     #
