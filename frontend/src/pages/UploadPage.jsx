@@ -28,19 +28,19 @@ export default function UploadPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">
+      <h1 className="text-2xl font-bold text-purple-400 mb-2">
         Upload a Receipt
       </h1>
-      <p className="text-gray-500 mb-6">
+      <p className="text-neutral-400 mb-6">
         Upload a receipt image or PDF to get started.
       </p>
 
-      {/* Drop zone */}
+      {/* Drop zone - Re-styled to Black & Purple */}
       <div
-        className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
+        className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all bg-black ${
           dragOver
-            ? "border-emerald-500 bg-emerald-50"
-            : "border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            ? "border-purple-400 bg-purple-950/20 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+            : "border-purple-600 hover:border-purple-400"
         }`}
         onClick={() => inputRef.current.click()}
         onDragOver={(e) => {
@@ -54,15 +54,15 @@ export default function UploadPage() {
           handleFile(e.dataTransfer.files[0]);
         }}
       >
-        <div className="text-5xl mb-3">📄</div>
+        <div className="text-5xl mb-3 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]">📄</div>
         {file ? (
-          <p className="text-gray-700 font-medium">{file.name}</p>
+          <p className="text-purple-300 font-medium">{file.name}</p>
         ) : (
           <>
-            <p className="text-gray-600 font-medium">
+            <p className="text-purple-400 font-medium hover:text-purple-300 transition-colors">
               Drag & drop or click to select
             </p>
-            <p className="text-gray-400 text-sm mt-1">Supports JPG, PNG, PDF</p>
+            <p className="text-purple-500/70 text-sm mt-1">Supports JPG, PNG, PDF</p>
           </>
         )}
         <input
@@ -74,21 +74,22 @@ export default function UploadPage() {
         />
       </div>
 
+      {/* Adjusted Upload Button to fit the new scheme */}
       <button
         onClick={handleUpload}
         disabled={!file || status === "uploading"}
-        className="mt-4 w-full bg-emerald-600 text-white py-2.5 rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="mt-4 w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-purple-900/20"
       >
         {status === "uploading" ? "Uploading..." : "Upload Receipt"}
       </button>
 
       {status === "success" && (
-        <p className="mt-3 text-emerald-600 text-center font-medium">
+        <p className="mt-3 text-purple-400 text-center font-medium">
           ✅ Receipt uploaded successfully!
         </p>
       )}
       {status === "error" && (
-        <p className="mt-3 text-red-500 text-center font-medium">
+        <p className="mt-3 text-red-400 text-center font-medium">
           ❌ Upload failed — is the backend running?
         </p>
       )}

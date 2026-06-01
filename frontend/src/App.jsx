@@ -6,39 +6,54 @@ import InsightsPage from "./pages/InsightsPage";
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white shadow-sm border-b">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex gap-6 items-center">
-            <span className="font-bold text-lg text-emerald-600">
-              Receipts to Riches
+      {/* Changed page background to a very dark gray/black */}
+      <div className="min-h-screen bg-neutral-950 text-gray-100">
+
+        {/* Navigation Bar: Solid black with a subtle purple bottom border */}
+        <nav className="bg-black border-b border-purple-900/40 shadow-md">
+          <div className="max-w-4xl mx-auto px-4 py-4 flex gap-8 items-center">
+
+            {/* Branding: Deep Purple */}
+            <span className="font-extrabold text-xl tracking-tight text-purple-500">
+              Budget Buddy
             </span>
+
+            {/* Navigation Links */}
             <NavLink
               to="/"
               end
               className={({ isActive }) =>
-                isActive
-                  ? "text-emerald-600 font-medium"
-                  : "text-gray-500 hover:text-gray-800"
+                `text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "text-purple-400 border-b-2 border-purple-500 pb-1"
+                    : "text-gray-400 hover:text-white"
+                }`
               }
             >
               Upload
             </NavLink>
+
             <NavLink
               to="/receipts"
               className={({ isActive }) =>
-                isActive
-                  ? "text-emerald-600 font-medium"
-                  : "text-gray-500 hover:text-gray-800"
+                `text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "text-purple-400 border-b-2 border-purple-500 pb-1"
+                    : "text-gray-400 hover:text-white"
+                }`
               }
             >
               Receipts
             </NavLink>
+
             <NavLink
               to="/insights"
               className={({ isActive }) =>
-                isActive
-                  ? "text-emerald-600 font-medium"
-                  : "text-gray-500 hover:text-gray-800"
+                `text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "text-purple-400 border-b-2 border-purple-500 pb-1"
+                    : "text-gray-400 hover:text-white"
+                }`
               }
             >
               Insights
