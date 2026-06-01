@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import time
@@ -7,7 +8,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from backend.dbconfig import init_db
+from backend.dbconfig import init_db, Receipt, add_receipt, PromptReceiptData
 
 load_dotenv()
 
@@ -45,53 +46,75 @@ async def upload_receipt(receipt: UploadFile = File(...)):
     with dest.open("wb") as f:
         shutil.copyfileobj(receipt.file, f)
 
-    # -------------------------------------------------------------------------
-    # TODO: AI EXTRACTION — plug in your OpenAI call here
-    # -------------------------------------------------------------------------
-    #
-    import base64
-    from openai import OpenAI
+        # -------------------------------------------------------------------------
+        # TODO: AI EXTRACTION — plug in your OpenAI call here
+        # -------------------------------------------------------------------------
+        #
+        import base64
+        from openai import OpenAI
 
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    #Step 1 — Read the saved file as base64
-    with open(dest, "rb") as f:
-        image_base64 = base64.b64encode(f.read()).decode()
+        #Step 1 — Read the saved file as base64
+        with open(dest, "rb") as f:
+            image_base64 = base64.b64encode(f.read()).decode()
 
-    #Step 2 — Send to GPT-4o Vision and ask it to extract receipt fields
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": "Extract the following from this receipt and return as JSON: store_name, date, items (list of {name, price}), total_amount, category (e.g. groceries, dining, transport).",
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{receipt.content_type};base64,{image_base64}"},
-                },
-            ],
-        }],
-    )
+        #Step 2 — Send to GPT-4o Vision and ask it to extract receipt fields
+        response = client.chat.completions.parse(
+            model="gpt-4o",
+            response_format=PromptReceiptData,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": """
+                        Extract the following from this receipt and return as JSON:
+                        Return ONLY valid JSON.
+                        
+                        Schema:
+                        {
+                            "timestamp": "ISO datetime",
+                            "items": [
+                                {
+                                    "name": "string",
+                                    "unit_price": number,
+                                    "quantity": number,
+                                    "category": "string"
+                                }
+                            ]
+                        }
+                    
+                        Do not include markdown or explanations.
+                        """
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{receipt.content_type};base64,{image_base64}"},
+                    },
+                ],
+            }],
+        )
 
-    # Step 3 — Parse the extracted JSON from the model response
-    receipt_data = json.loads(response.choices[0].message.content)
-    #
-    # Step 4 — Save to your database (design your own schema!)
-    #TODO: Implement DB
-    #
-    # -------------------------------------------------------------------------
+        print(response.choices[0].message.parsed)
 
-    return {"message": "Receipt uploaded successfully.", "filename": filename}
+        # Step 3 — Parse the extracted JSON from the model response
+        receipt_data = response.choices[0].message.parsed
+        #
+        # Step 4 — Save to your database (design your own schema!)
+
+        add_receipt(receipt_data.model_dump(), filename)
 
 
-# ---------------------------------------------------------------------------
-# GET /receipts
-# Returns a list of files currently in /uploads.
-# Once you have a database, replace this with a DB query.
-# ---------------------------------------------------------------------------
+
+        return {"message": "Receipt uploaded successfully.", "filename": filename}
+
+
+    # ---------------------------------------------------------------------------
+    # GET /receipts
+    # Returns a list of files currently in /uploads.
+    # Once you have a database, replace this with a DB query.
+    # ---------------------------------------------------------------------------
 @app.get("/receipts")
 def list_receipts():
     files = [

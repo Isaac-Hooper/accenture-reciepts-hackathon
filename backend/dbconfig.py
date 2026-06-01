@@ -1,8 +1,7 @@
 from datetime import datetime
 
 import sqlalchemy
-from openai.types.moderation import Categories
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy import (
     create_engine,
     String,
@@ -13,13 +12,29 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
 
-engine = create_engine("sqlite://", echo=True)
+engine = create_engine("sqlite:///receipts_db", echo=True)
 
 SessionLocal = sessionmaker(
     bind = engine,
     autocommit = False,
     autoflush = False,
 )
+
+#Pydantic Definitions (for prompt)
+from pydantic import BaseModel
+
+
+class PromptReceiptItem(BaseModel):
+    name: str
+    quantity: int
+    unit_price: float
+    category: str
+
+
+class PromptReceiptData(BaseModel):
+    timestamp: str
+    items: list[PromptReceiptItem]
+
 
 #Table Definitions
 class Base(DeclarativeBase):
@@ -29,11 +44,12 @@ class Receipt(Base):
     __tablename__ = "receipts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    datetime: Mapped[DateTime] = mapped_column()
+    timestamp: Mapped[datetime] = mapped_column()
     image_path: Mapped[str] = mapped_column()
 
     items: Mapped[list["Item"]] = relationship(
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        back_populates="receipt"
     )
 
 
@@ -47,11 +63,20 @@ class Item(Base):
         index=True
     )
 
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id"),
+        index=True
+    )
+
     name: Mapped[str] = mapped_column(String(255))
 
     quantity: Mapped[int] = mapped_column(default = 1)
 
     unit_price: Mapped[float] = mapped_column(Float)
+
+    receipt: Mapped["Receipt"] = relationship(
+        back_populates="items"
+    )
 
     category: Mapped["Category"] = relationship(
         back_populates="items"
@@ -70,7 +95,7 @@ class Category(Base):
         index=True,
     )
 
-    items: Mapped[list["ReceiptItem"]] = relationship(
+    items: Mapped[list["Item"]] = relationship(
         back_populates="category"
     )
 
@@ -94,8 +119,47 @@ PRESET_CATEGORIES = [
 def add_categories():
     with SessionLocal() as session:
         for id, name in PRESET_CATEGORIES:
-            session.merge(Categories(id=id, name=name))
+            session.merge(Category(id=id, name=name))
+            session.commit()
 
+def add_receipt(receipt_json, image_path):
+    with SessionLocal() as session:
+
+        #Create Receipt
+        receipt = Receipt(
+            timestamp = datetime.fromisoformat(receipt_json["timestamp"]),
+            image_path = image_path,
+        )
+
+        session.add(receipt)
+        session.flush()
+
+        #Create Items
+        for item_data in receipt_json["items"]:
+
+            category = session.scalar(
+                select(Category).where(
+                    Category.name == item_data["category"]
+                )
+            )
+
+            if category is None:
+                category = Category(
+                    name=item_data["category"]
+                )
+                session.add(category)
+                session.flush()
+
+            item = Item(
+                receipt_id=receipt.id,
+                category_id=category.id,
+                name=item_data["name"],
+                quantity=item_data.get("quantity", 1),
+                unit_price=item_data["unit_price"],
+            )
+
+            receipt.items.append(item)
+            session.commit()
 
 
 
