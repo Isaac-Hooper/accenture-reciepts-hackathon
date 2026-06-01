@@ -83,7 +83,7 @@ export default function ReceiptsPage() {
                 >
                   <div>
                     <h3 className="font-bold text-purple-300 text-base">
-                      {receipt.items?.[0]?.category_name || "General"} Purchase
+                      {receipt.items?.[0]?.category || "General"} Purchase
                     </h3>
                     <span className="text-xs text-neutral-500">ID #{receiptId} • {uploadDate}</span>
                   </div>
@@ -115,7 +115,7 @@ export default function ReceiptsPage() {
                                 {item.name}
                               </p>
                               <span className="inline-block text-[10px] px-2 py-0.5 bg-purple-950/40 border border-purple-900/30 rounded text-purple-400 uppercase tracking-tight">
-                                {item.category_name}
+                                {item.category}
                               </span>
                             </div>
                             <div className="text-right font-mono">

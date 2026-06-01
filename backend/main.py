@@ -115,7 +115,7 @@ async def upload_receipt(receipt: UploadFile = File(...)):
     # ---------------------------------------------------------------------------
 @app.get("/receipts")
 def list_receipts():
-    print(get_all_receipts())
+    return get_all_receipts()
 
     files = [
         {"filename": f.name, "uploaded_at": f.stat().st_mtime}
