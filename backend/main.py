@@ -131,10 +131,6 @@ def list_receipts():
 # ---------------------------------------------------------------------------
 @app.get("/insights")
 def get_insights():
-    # -------------------------------------------------------------------------
-    # TODO: AI INSIGHTS — plug in your OpenAI call here
-    # -------------------------------------------------------------------------
-    #
     import json
     from openai import OpenAI
 
@@ -157,6 +153,7 @@ def get_insights():
             },
         ],
     )
+
 
     # Step 3 — Return the insights to the frontend
     return {"insights": response.choices[0].message.content}

@@ -1,28 +1,70 @@
-export default function InsightsPage() {
-  return (
-    <div className="max-w-lg mx-auto text-center py-8">
-      <div className="text-6xl mb-4">📊</div>
-      <h1 className="text-2xl font-bold text-purple-400 mb-6">
-        Spending Insights
-      </h1>
+import { useEffect, useState } from "react";
 
-      <div className="max-w-md text-left mx-auto">
-        <div className="p-4 bg-black border border-purple-900/40 rounded-lg text-sm text-purple-300 shadow-sm">
-          <p className="font-semibold mb-1 text-purple-400">💡 TODO for you to build:</p>
-          <ul className="list-disc list-inside space-y-1">
-            <li>
-              Call{" "}
-              <code className="bg-purple-950/40 text-purple-300 px-1 rounded border border-purple-800/30">
-                GET /insights
-              </code>{" "}
-              to fetch AI analysis
-            </li>
-            <li>Render spending by category (pie or bar chart)</li>
-            <li>Show monthly trends and top merchants</li>
-            <li>Display AI-generated saving tips</li>
-          </ul>
+export default function InsightsPage() {
+    const [insights, setInsights] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        async function fetchInsights() {
+            try {
+                const response = await fetch("http://localhost:8000/insights");
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch insights");
+                }
+
+                const data = await response.json();
+
+                setInsights(data.insights);
+            } catch (err) {
+                console.error(err);
+                setError(true);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchInsights();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="max-w-4xl mx-auto py-16 text-center">
+                <div className="text-purple-400 animate-pulse text-lg font-medium">
+                    🤖 Analysing your spending habits...
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="max-w-4xl mx-auto py-16 text-center">
+                <div className="text-red-400 font-medium">
+                    ❌ Failed to generate insights.
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-5xl mx-auto px-6 py-8">
+            <h1 className="text-3xl font-bold text-purple-400 mb-8">
+                Financial Insights
+            </h1>
+
+            <div className="grid gap-6">
+                <div className="bg-black border border-purple-900/40 rounded-2xl p-6 shadow-lg">
+                    <h2 className="text-lg font-semibold text-purple-300 mb-4">
+                        AI Spending Analysis
+                    </h2>
+
+                    <div className="prose prose-invert max-w-none whitespace-pre-wrap text-neutral-200 leading-relaxed">
+                        {insights}
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
