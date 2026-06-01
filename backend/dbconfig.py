@@ -10,7 +10,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, selectinload
 
 engine = create_engine("sqlite:///receipts_db", echo=True)
 
@@ -161,5 +161,35 @@ def add_receipt(receipt_json, image_path):
             receipt.items.append(item)
             session.commit()
 
+def get_all_receipts():
+    with SessionLocal() as session:
+        receipts = session.scalars(
+            select(Receipt)
+            .options(
+                selectinload(Receipt.items)
+                .selectinload(Item.category)
+            )
+        ).all()
 
+
+        result = []
+
+        for receipt in receipts:
+            result.append({
+                "id": receipt.id,
+                "timestamp": receipt.timestamp.isoformat(),
+                "image_path": receipt.image_path,
+                "items": [
+                    {
+                        "id": item.id,
+                        "name": item.name,
+                        "quantity": item.quantity,
+                        "unit_price": item.unit_price,
+                        "category": item.category.name,
+                    }
+                    for item in receipt.items
+                ]
+            })
+
+        return result
 

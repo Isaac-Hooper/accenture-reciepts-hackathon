@@ -8,7 +8,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from backend.dbconfig import init_db, Receipt, add_receipt, PromptReceiptData
+from backend.dbconfig import init_db, Receipt, add_receipt, PromptReceiptData, get_all_receipts
 
 load_dotenv()
 
@@ -105,8 +105,6 @@ async def upload_receipt(receipt: UploadFile = File(...)):
 
         add_receipt(receipt_data.model_dump(), filename)
 
-
-
         return {"message": "Receipt uploaded successfully.", "filename": filename}
 
 
@@ -117,6 +115,8 @@ async def upload_receipt(receipt: UploadFile = File(...)):
     # ---------------------------------------------------------------------------
 @app.get("/receipts")
 def list_receipts():
+    print(get_all_receipts())
+
     files = [
         {"filename": f.name, "uploaded_at": f.stat().st_mtime}
         for f in UPLOADS_DIR.iterdir()
@@ -135,39 +135,33 @@ def get_insights():
     # TODO: AI INSIGHTS — plug in your OpenAI call here
     # -------------------------------------------------------------------------
     #
-    # import json
-    # from openai import OpenAI
-    #
-    # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    import json
+    from openai import OpenAI
+
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     #
     # Step 1 — Fetch all processed receipt data from your database
-    # receipts = db.get_all_receipts()
+    receipts = get_all_receipts()
     #
     # Step 2 — Ask GPT to analyse spending patterns across all receipts
-    # response = client.chat.completions.create(
-    #     model="gpt-4o",
-    #     messages=[
-    #         {
-    #             "role": "system",
-    #             "content": "You are a personal finance advisor. Analyse the user's spending data and provide clear, actionable insights.",
-    #         },
-    #         {
-    #             "role": "user",
-    #             "content": f"Here is my spending data: {json.dumps(receipts)}. Please provide: 1) a spending summary, 2) top spending categories, 3) three specific saving tips.",
-    #         },
-    #     ],
-    # )
-    #
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a personal finance advisor. Analyse the user's spending data and provide clear, actionable insights.",
+            },
+            {
+                "role": "user",
+                "content": f"Here is my spending data: {json.dumps(receipts)}. Please provide: 1) a spending summary, 2) top spending categories, 3) three specific saving tips.",
+            },
+        ],
+    )
+
     # Step 3 — Return the insights to the frontend
-    # return {"insights": response.choices[0].message.content}
+    return {"insights": response.choices[0].message.content}
     #
     # -------------------------------------------------------------------------
-
-    return {
-        "message": "Insights endpoint placeholder — implement AI analysis here!",
-        "insights": None,
-    }
-
 
 if __name__ == "__main__":
     import uvicorn
